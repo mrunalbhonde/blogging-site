@@ -1,17 +1,71 @@
 import { Hono } from 'hono'
+import { PrismaClient } from '@prisma/client/edge'
+import { withAccelerate } from '@prisma/extension-accelerate'
+import { sign } from 'hono/jwt'
 
-const app = new Hono()
+export const userRouter = new Hono<{
+  Variables: {
+    
+  },
+  Bindings: {
+    DATABASE_URL: string,
+    JWT_SECRET: string,
+  }
+}>();
 
-app.post('/signup', (c){
+userRouter.post('/signup', async (c) => {
 
+  const body = await c.req.json();
+  const prisma = new PrismaClient({
+      datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate())
+
+  //duplicate email, prisma throws exception as it is unique field
+  try{
+    const user = await prisma.user.create({
+      data: {
+        username: body.username,
+        password: body.password,
+        name: body.name,
+      }
+    });
+    const token = await sign({id: user.id}, c.env.JWT_SECRET);
+    return c.json({token});
+  } catch(e){
+    c.status(401);
+    return c.text("User already exists");
+  }
 })
 
-app.post('/signup', (c){
+userRouter.post('/signin', async (c) => {
+  const body = await c.req.json();
+  const prisma = new PrismaClient({
+      datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate())
 
+  //duplicate email, prisma throws exception as it is unique field
+  try{
+    const user = await prisma.user.findFirst({
+      where: {
+        username: body.username,
+        password: body.password,
+        name: body.name,
+      }
+    });
+    if(!user){
+      c.status(403); //unauthorized wrong cred status code
+      return c.text("User not Found");
+    }
+    const token = await sign({id: user.id}, c.env.JWT_SECRET);
+    return c.json({token});
+  } catch(e){
+    c.status(401);
+    return c.text("Invalid");
+  }
 })
 
-app.get('/', (c) => {
+userRouter.get('/', (c) => {
   return c.text('Hello Hono!')
 })
 
-export default app
+// export userRouter;
