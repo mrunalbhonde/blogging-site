@@ -4,13 +4,10 @@ import { withAccelerate } from '@prisma/extension-accelerate'
 import { sign } from 'hono/jwt'
 
 export const userRouter = new Hono<{
-  Variables: {
-    
-  },
   Bindings: {
     DATABASE_URL: string,
     JWT_SECRET: string,
-  }
+  };
 }>();
 
 userRouter.post('/signup', async (c) => {

@@ -11,8 +11,8 @@ const app = new Hono()
 
 // typescript will kalso have a type error for variables/bindings inside prisma client init as ts doesnt know their types
 
-app.route('/api/vi/user', userRouter);
-app.route('/ap/v1/blog', blogRouter);
+app.route('/api/v1/user', userRouter);
+app.route('/api/v1/blog', blogRouter);
 
 // app.listen();
 export default app
